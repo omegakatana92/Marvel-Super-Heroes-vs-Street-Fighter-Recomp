@@ -20,18 +20,26 @@ From the toolkit, with no game work:
 - **Run-ahead** and the **Display** options (scaling, picture shape, window size, full screen).
 - Every key and button **remappable**, for each player.
 
-No game-specific feature is built yet: the memory that the cheats and the training aids need is the
-next step (see below).
+From the game's own sources (`games/mshvsf/src/`, the addresses in `PROGRESS.md`):
+
+- **Free play** and the **cheats**: no damage (each player), infinite time, one-hit knockouts, full
+  LEVEL bars.
+- **Training**: the input display, frame data, the frame meter, the frame data log, a combo readout,
+  health refills and the hit boxes.
+
+Still missing: the dummy (player 2 standing, crouching, jumping, guarding, recording and replaying), the
+advantage after a guarded hit, the projectiles' boxes and the operator settings. The memory that the rest
+needs is the next step (see below).
 
 ## What a finished port adds (this is the work)
 
-### 0. Foundation — know the game's memory
+### 0. Foundation — know the game's memory — **done**
 
-The credits, the round's clock and the two players' records have to be found and named in
-`games/mshvsf/src/mshvsf.h`: the health (and what the bars are drawn from), the place across the
-stage, the facing and the super gauge, each with how it was found in `PROGRESS.md`. Then the **state
-that says what a player is doing** (standing, walking, crouching, in the air, attacking, reeling), which
-the frame data, the dummy and the hit boxes want; and the **attack boxes** themselves.
+The credits, the round's clock and the two players' records are found and named in
+`games/mshvsf/src/mshvsf.h`: the health (and what the bars are drawn from), the place across the stage,
+the facing and the super gauge, each with how it was found in `PROGRESS.md`. The **state that says what a
+player is doing** (standing, walking, crouching, in the air, attacking, reeling) is there too, and the
+**attack boxes**: the game's box table and the numbers of the boxes out.
 
 How the toolkit finds these (all in `docs/FEATURES.md`):
 
@@ -43,30 +51,29 @@ How the toolkit finds these (all in `docs/FEATURES.md`):
 - `--poke ADDR=BYTE,...` to try a guess; `--menu FRAME:KEYS` to press the menu's own rows;
   `--shot-every N:PFX` to see a run.
 
-### 1. The Features page (the game's own switches)
+### 1. The Features page (the game's own switches) — **done, but for the operator settings**
 
-| Feature | Kind | Needs |
-| --- | --- | --- |
-| `free_play` | on/off | the credit word |
-| `no_damage`, `no_damage_2` | on/off | each player's health and the round's full value |
-| `infinite_time` | on/off | the round's clock |
-| `one_hit` | on/off | the opponent's health |
-| `full_gauge` | on/off | the value behind each player's super bar |
-| Board/operator settings (difficulty, round time, free play) | choices | reading the EEPROM's operator settings |
-| "The game's own test menu" | command | a routine address to jump to |
+| Feature | Kind | Needs | State |
+| --- | --- | --- | --- |
+| `free_play` | on/off | the credit word | done (`FF4C75`) |
+| `no_damage`, `no_damage_2` | on/off | each player's health and the round's full value | done (`+0x251`, `+0x25B`, `0x90`) |
+| `infinite_time` | on/off | the round's clock | done (`FF4808`, BCD) |
+| `one_hit` | on/off | the opponent's health | done |
+| `full_gauge` | on/off | the value behind each player's super bar | done (`+0x254`, 0–3) |
+| Board/operator settings (difficulty, round time, free play) | choices | reading the EEPROM's operator settings | not mapped yet |
+| "The game's own test menu" | command | a routine address to jump to | not found yet |
 
-### 2. Training mode (the headline feature)
+### 2. Training mode (the headline feature) — **in progress**
 
-| Piece | What it adds | Needs |
-| --- | --- | --- |
-| Input display | what the stick holds, and for how long | the players' facings, or their places across the stage |
-| Frame data | startup, active, recovery, and the advantage after a hit | the state that says a move is out, per player |
-| Combo readout | hits, damage, and what of it comes back | the damage rule (a rewrite) |
-| The dummy (player 2) | stand, crouch, jump, guard, record and replay | the game's idea of a round and of guarding |
-| Hit boxes | the players' and projectiles' boxes, drawn on the picture | the box tables and the camera's place |
+| Piece | What it adds | Needs | State |
+| --- | --- | --- | --- |
+| Input display | what the stick holds, and for how long | the players' facings, or their places across the stage | done (facing from `+0x4B`) |
+| Frame data | startup, active, recovery, and the advantage after a hit | the state that says a move is out, per player | done for the numbers; the advantage after a **guarded** hit waits on the game's guarding being known |
+| Combo readout | hits, damage, and what of it comes back | the damage rule (a rewrite) | a first version from the health dropping; what comes back waits on the damage rule |
+| The dummy (player 2) | stand, crouch, jump, guard, record and replay | the game's idea of a round and of guarding | **not built**: the game's guarding is not found yet |
+| Hit boxes | the players' and projectiles' boxes, drawn on the picture | the box tables and the camera's place | the players' boxes are drawn (hurt, attack, throw range, throwable); the push box and the projectiles wait |
 
-The toolkit's `fight/` parts (`fight/fight.h`) give all of these once the game's own state is known; the
-input display is the first one and needs only the facing.
+The toolkit's `fight/` parts (`fight/fight.h`) give all of these once the game's own state is known.
 
 ### 3. Alternative modes
 
@@ -90,10 +97,12 @@ mode and the widescreen possible, and it is the part most worth doing carefully.
 ## Recommended order
 
 1. **The foundation** — the credits, the clock and the player records (health, position, facing, state,
-   gauge); everything else builds on it.
-2. **The Features page** — free play and the cheats, small and self-contained.
+   gauge); everything else builds on it. **Done.**
+2. **The Features page** — free play and the cheats, small and self-contained. **Done**, but for the
+   operator settings and the game's own test menu.
 3. **Training mode** — the input display first, then the frame data, the combo readout, the dummy and the
-   hit boxes, on the toolkit's `fight/` parts.
+   hit boxes, on the toolkit's `fight/` parts. **In progress**: the display, the frame data, the combo
+   readout and the boxes are in; the dummy waits on the game's guarding.
 4. **Readable rewrites** — needed by 3 and 5, and correctness.
 5. **Widescreen.**
 6. **Alternative modes.**

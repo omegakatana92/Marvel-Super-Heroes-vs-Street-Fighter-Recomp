@@ -25,9 +25,28 @@ work):
 - **Run-ahead** and the **Display** options (scaling, picture shape, window size, full screen).
 - Every key and button **remappable**, for each player.
 
-The game's own features are still being found; the addresses go in
-[games/mshvsf/PROGRESS.md](games/mshvsf/PROGRESS.md) as they are confirmed on the running board, and
-the code that uses them goes in `games/mshvsf/src/`. See [ROADMAP.md](ROADMAP.md) for what is next.
+The game's own features (`games/mshvsf/src/`), from addresses found on the running board and recorded in
+[games/mshvsf/PROGRESS.md](games/mshvsf/PROGRESS.md):
+
+| Feature | Category | What it does |
+| --- | --- | --- |
+| Free play | Game | Start works without a coin. |
+| No damage | Cheats | Player 1's health does not go down. |
+| No damage, player 2 | Cheats | The same for player 2 (the opponent, in a one-player game). |
+| Infinite time | Cheats | The round's clock stands still. |
+| One-hit knockouts | Cheats | Player 2 goes down with the first hit. |
+| Full LEVEL bars | Cheats | Every gauge is kept, so a super is always ready. |
+| Input display | Training | What each player presses and for how many frames. |
+| Frame data | Training | Startup, active and recovery of each move. |
+| Frame meter | Training | A row of cells a step, coloured by what each player is doing. |
+| Frame data log | Training | Every move's numbers written to `frame_data.csv`. |
+| Combo readout | Training | What each hit and combo took off, and the round's best. |
+| Hit boxes | Training | The boxes the game tests, drawn over the picture. |
+| Health refills | Training | Health comes back after a moment without being hit. |
+
+The training aids are a work in progress: the dummy (player 2 standing, crouching, jumping, guarding,
+recording and replaying) waits on the game's own idea of guarding being found, as
+[ROADMAP.md](ROADMAP.md) says.
 
 `--list-features` prints the whole list. Ready-made builds for Windows, Linux and the Steam Deck go on
 the [Releases](../../releases) page.
