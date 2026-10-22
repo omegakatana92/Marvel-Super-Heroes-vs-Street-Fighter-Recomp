@@ -56,6 +56,8 @@ constexpr uint16_t kGround = 0x1D8;
 constexpr uint32_t kFlip = 0x4B;        // byte, bit 0: the record is drawn turned about. The game's own
                                         // pictures face left, so a player facing left has the bit clear
 constexpr uint32_t kCharacter = 0x53;   // byte: the character's number (even, 0x02-0x32)
+constexpr uint32_t kMove = 0x60;        // word: the move being done (0x1000-0x1004 a punch, light to heavy;
+                                        // 0x1200-0x1204 a kick; a special has a code of its own)
 constexpr uint32_t kAction = 0xA0;      // byte: what the player is doing (below)
 constexpr uint32_t kActionBefore = 0xA1; // byte: the step before's kAction
 
@@ -68,9 +70,11 @@ enum : uint8_t {
     kActionCrouchStart = 0x0A,
     kActionCrouch = 0x0C,
     kActionCrouchEnd = 0x0E,
-    kActionIdle = 0x24,   // (a second idle the game uses, in a round and between them)
-    kActionAttack = 0x28, // a normal or special move being done
-    kActionReel = 0x36,   // reeling from a hit
+    kActionGuard = 0x24,      // guarding a hit (the blockstun pose)
+    kActionAttack = 0x28,     // a normal or special move being done
+    kActionGetUp = 0x22,      // getting up from a knock-down
+    kActionDown = 0x2E,       // knocked down, lying on the floor
+    kActionReel = 0x36,       // reeling from a hit
 };
 
 // The health: what is left (a byte, 0x90 at the round's start) and the same again drawn down a step at a
@@ -91,6 +95,8 @@ constexpr uint32_t kAttackBox = 0x70;      // word
 constexpr uint32_t kAttackBox2 = 0x72;     // word
 constexpr uint32_t kHurtBoxes[4] = {0x74, 0x76, 0x78, 0x7A}; // words
 constexpr uint32_t kThrowBox = 0x7C;       // word: being thrown
+constexpr uint32_t kPushBox = 0xA4;        // byte: the pushing box's number, in a table shared by every character
+constexpr uint32_t kPushBoxTable = 0x137EE2; // long a number: where the pushing boxes of that number are in the ROM
 constexpr uint16_t kBoxNumberMask = 0x1FFF;
 constexpr uint16_t kThrowRangeBit = 0x8000;
 
@@ -115,6 +121,17 @@ inline bool Reeling(int n) {
     return cps2recomp::Ram16(Player(n) + kState) != 0;
 }
 
+// The player is guarding a hit: the action is the blockstun pose
+inline bool Guarding(int n) {
+    return cps2recomp::Ram8(Player(n) + kAction) == kActionGuard;
+}
+
+// The player is on the floor after a knock-down, or getting up from one
+inline bool KnockedDown(int n) {
+    const uint8_t action = cps2recomp::Ram8(Player(n) + kAction);
+    return action == kActionDown || action == kActionGetUp;
+}
+
 // The player is free to start something: in charge of itself and on the ground, standing, walking or
 // crouching (and not between the steps of a move)
 inline bool CanAct(int n) {
@@ -128,7 +145,6 @@ inline bool CanAct(int n) {
     case kActionCrouchStart:
     case kActionCrouch:
     case kActionCrouchEnd:
-    case kActionIdle:
         return true;
     default:
         return false;

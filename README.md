@@ -43,10 +43,13 @@ The game's own features (`games/mshvsf/src/`), from addresses found on the runni
 | Combo readout | Training | What each hit and combo took off, and the round's best. |
 | Hit boxes | Training | The boxes the game tests, drawn over the picture. |
 | Health refills | Training | Health comes back after a moment without being hit. |
+| Dummy: stands, crouches, jumps | Dummy | Player 2 stays put, crouches, or jumps again and again. |
+| Dummy: records and replays | Dummy | Three recording slots: player 1's controls work player 2 while recording, then player 2 does it over and over. |
+| Dummy: guards | Dummy | Holds away from attacks (crouching for a low, standing for a jump-in) always, after being hit, or at random; presses buttons while guarding; answers with a recording after guarding or being hit. |
 
-The training aids are a work in progress: the dummy (player 2 standing, crouching, jumping, guarding,
-recording and replaying) waits on the game's own idea of guarding being found, as
-[ROADMAP.md](ROADMAP.md) says.
+The training aids are a work in progress: the combo readout takes its damage from the health dropping
+(the game's own damage rule is not rewritten yet), a projectile's boxes are not drawn, and the dummy's
+guard uses a distance rather than the game's own guard test. [ROADMAP.md](ROADMAP.md) says what is next.
 
 `--list-features` prints the whole list. Ready-made builds for Windows, Linux and the Steam Deck go on
 the [Releases](../../releases) page.

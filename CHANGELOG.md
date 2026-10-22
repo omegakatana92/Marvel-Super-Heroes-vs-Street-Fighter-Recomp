@@ -1,5 +1,28 @@
 # Marvel Super Heroes vs. Street Fighter Recomp — changelog
 
+## 0.3.0-beta.1
+
+The training mode is complete but for a projectile's boxes: the dummy works, a guarded hit's advantage
+is worked out, and the pushing box is drawn. All of it is optional; with every feature off the game runs
+exactly as the board does.
+
+**Found on the running board**: guarding (hold away; a low must be guarded crouching) and its blockstun
+pose, being knocked down and getting up, the move number (the six normals are told apart), and the
+pushing box's shared table. `games/mshvsf/PROGRESS.md` tells how each was found and checked.
+
+**Features**
+
+- The **dummy** (player 2): stands, crouches, jumps; records and replays (three slots, 20 seconds each);
+  guards always, after being hit or at random, crouching for a low and standing for a jump-in; presses
+  buttons while guarding; answers with a recording after guarding or being hit.
+- Frame data now shows the **advantage after a guarded hit** (written to `frame_data.csv` too).
+- The frame data log writes the game's own **move number** for each move.
+- Hit boxes now include the **pushing box**.
+
+**Still to come** (`ROADMAP.md`): a projectile's boxes, the game's damage rule (so the combo readout can
+show what of a hit comes back), the operator settings and the game's own test menu, the readable
+rewrites and widescreen.
+
 ## 0.2.0-beta.1
 
 The game's own memory is mapped, and the first features built on it are in: the cheats, free play and

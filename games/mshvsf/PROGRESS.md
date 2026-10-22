@@ -74,17 +74,35 @@ with a known action in a `--trace`. No value was taken on trust from either.
 | `+0x53` | byte | the character's number (even, `0x02`-`0x32`) | The MAME cheat collection's character-select addresses; read at the character choice, where the records held the numbers of the four characters chosen |
 | `+0x4B` | byte | how the record is turned about: bit 0 set when it is mirrored (the game's pictures face left, so a player facing left has it clear) | A `--trace` of two players walking through each other: the bit turned over exactly as they passed |
 | `+0x06` | word | who is in charge of the player: 0 while it is itself; 4, 8 and `0x0C` while a hit, a throw or a knock-down is | A `--trace` of a round in which player 1 stood still: the word went 0 → `0x0C` on the frame a hit landed, and back to 0 as the player could act again. The published hit-box script tests the same word |
-| `+0x0A0` | byte | what the player is doing: `0x00` standing, `0x02` walking, `0x04`/`0x06` a jump, `0x08` landing, `0x0A`/`0x0C`/`0x0E` crouching, `0x24` a second idle, `0x28` a move being done, `0x36` reeling | A two-player match with player 2 standing still, driven through walk, crouch, jump, six buttons and a hit, with a `--trace` and a picture every ten frames; each value matched the action in the picture |
+| `+0x0A0` | byte | what the player is doing: `0x00` standing, `0x02` walking, `0x04`/`0x06` a jump, `0x08` landing, `0x0A`/`0x0C`/`0x0E` crouching, `0x22` getting up, `0x24` guarding a hit (the blockstun pose), `0x28` a move being done, `0x2E` knocked down and lying, `0x36` reeling | A two-player match with player 2 standing still, driven through walk, crouch, jump, six buttons, a hit, a sweep and a knocked-down get-up, with a `--trace` and a picture every ten frames; each value matched the action in the picture |
+| `+0x060` | word | the move being done: `0x1000`, `0x1002`, `0x1004` are light, medium and heavy punches; `0x1200`, `0x1202`, `0x1204` the three kicks; a special has a code of its own | Six single presses, one a run, with a `--trace`: the word was constant through each move and different for every button |
 | `+0x6C` | long | where this record's box table is in the ROM | The published hit-box script; the table's entries were read from the program and drawn over the players, and a box's middle and size landed on the body part it belongs to |
 | `+0x70`, `+0x72` | words | the two attack boxes out; 0 none. Bit 15 set: the player's throw range, not an attack that can hit. Bits 13-14 are flags (the game reads the low 13 bits) | Same: the words were 0 at rest, became `0x21`, `0x3F` and so on over the frames of a punch, and the box they name is where the fist was |
 | `+0x74`, `+0x76`, `+0x78`, `+0x7A` | words | the four boxes a player can be hit in | Same: their table entries sit on the body as the game draws it |
 | `+0x7C` | word | the box a player can be thrown from | Same |
-| `+0xA4` | byte | the pushing box (a box of a different table in the ROM) | The published hit-box script; not drawn yet |
+| `+0xA4` | byte | the pushing box's number; its boxes are in a table of their own at `0x137EE2` (a long a number, then four bytes a character) | The published hit-box script; the box read from the table sat exactly where the two players' feet pushed against each other, and was drawn as a 54-pixel box around each body |
 | `+0x064` | word | the move's step: `0x8000` while it can be part of the move, `0x4000` in its recovery | A `--trace` of one punch frame by frame: the word held `0x8000` through the attack box and turned to `0x4000` as it went away, before the action went back to standing |
 | `+0x0A1`, `+0x0A7` | bytes | the action before, and a move's count (1, 2, 3 … as moves are done) | The same trace: `+0xA1` is the previous step's `+0xA0`; `+0xA7` ticks once a move |
 
 The clock deserves a note: it is BCD, so `0x99` is the picture's "99" and `0x90` is "90". It steps
 down about every 94 frames, which is this board's own count, not one a second of the port's time.
+
+### What a guard, a knock-down and a get-up are
+
+Found by holding away on the second player's controls (and down and away for a low) while player 1
+attacked, in a two-player match where neither side was the computer:
+
+- **A guard** is the stick held away from the attacker when the attack is tested; the game takes no
+  health off, and the player is put in the blockstun pose, action `0x24`, for its duration (14 frames
+  for a standing heavy punch). A **low** attack must be guarded with down and away: a standing guard
+  lets it through.
+- **A knock-down** is action `0x2E` (lying on the floor); **getting up** is `0x22`, then the player is
+  free again. A sweep (down and a heavy kick) puts the other player down this way, whatever the guard.
+  The state word `+0x06` is 0 throughout, so the action is what tells a knock-down from a hit's stun.
+
+The toolkit's frame counting is told all of this: a guard is `Reeling` with `Contact(victim, guarded)`,
+so the advantage after a guarded hit is worked out and written to `frame_data.csv`; a knock-down is
+`Held`, so it is not counted as a move.
 
 ## Features built on it (`src/`)
 
@@ -98,35 +116,37 @@ down about every 94 frames, which is this board's own count, not one a second of
 | Input display | Training | What each player holds and for how many frames, as a keypad number and the six buttons, turned so that "towards" is always 6 | `training.cpp` (`+0x4B`, `+0x0C`) |
 | Frame data | Training | Startup, active and recovery of each move, from when an attack box is out; the numbers stay up after the move | `training.cpp` (`+0x0A0`, `+0x70`, `+0x72`) |
 | Frame meter | Training | A row of cells a step, coloured by what each player was doing | `training.cpp` (the toolkit's `fight::Frames`) |
-| Frame data log | Training | Writes each move to `frame_data.csv` beside the settings file | `training.cpp` |
+| Frame data log | Training | Writes each move to `frame_data.csv` beside the settings file, with the game's own move number | `training.cpp` (`+0x60`) |
 | Combo readout | Training | What each hit took off, the combo and the round's best, from the health dropping | `training.cpp` (`+0x251`) |
-| Hit boxes | Training | Draws the boxes the game tests: where a player can be hit (blue), attacks (red), a throw's range (yellow) and a throwable box (white), placed as the camera shows them | `training.cpp` (`+0x6C` table, `+0x70`–`+0x7C`) |
+| Hit boxes | Training | Draws the boxes the game tests: where a player can be hit (blue), attacks (red), a throw's range (yellow), a throwable box (white) and the pushing box (green), placed as the camera shows them | `training.cpp` (`+0x6C` table, `+0x70`–`+0x7C`, `+0xA4` and `0x137EE2`) |
 | Health refills | Training | Health comes back after a moment without being hit | `training.cpp` |
+| Dummy: stands, crouches, jumps | Dummy | Player 2 does what is chosen, or nothing | `training.cpp`, the toolkit's `fight::Dummy` |
+| Dummy: records and replays | Dummy | Player 1's controls work player 2 while recording (three slots, 20 seconds each), then player 2 does it again and again | `training.cpp` |
+| Dummy: guards | Dummy | Holds away when player 1 starts an attack near enough (a low one crouching, a jump-in standing), always, after being hit, or at random; may press buttons while guarding; answers with a recording after guarding or being hit | `training.cpp` (`+0x0A0` guard pose, `+0x0C`/`+0x10` places) |
 
 With every one of these off, the game runs exactly as the board does: they work on the game's memory
 after every frame, and nothing is hooked or rewritten yet.
 
 ## What is not known yet
 
-- **The dummy.** The game's own idea of guarding, of being knocked down and of getting up is not found
-  yet, so player 2 cannot be made to stand, crouch, jump, guard, record or replay (ROADMAP.md, training
-  mode).
-- **The per-move number.** The log writes the action (`0x28`) for every attack; what tells a light punch
-  from a heavy kick in the record is not known. The input is written beside it, which tells them apart.
-- **Guarded hits.** The game takes no health off a guarded hit, so the combo readout and the frame data
-  cannot see one yet, and the advantage after a guarded hit is never worked out.
-- **The push box.** Its number is known (`+0xA4`) but its table is a different one, shared by every
-  character; it is not drawn.
-- **Projectiles.** Fireballs and the like have records of their own off `FFE32E`; they are not drawn or
-  counted yet.
-- **The other stage records.** Only the two stages played have been checked against the camera table.
+- **The damage rule.** The store that takes a hit off a player's health is at `0x018536` (found with
+  `--watch FF3E51` under `--cpu interp`), so the routine around it is the place to start; it has not
+  been read through, so the combo readout takes its damage from the health dropping, and how much of a
+  hit comes back by itself is not shown.
+- **Projectiles.** Fireballs and the like have records of their own; none was produced in the runs so
+  far (the special-move animations were reached, but the published pointer list showed only the
+  players), so their boxes are not drawn or counted.
 - **The operator settings** (difficulty, round time, free play in the EEPROM) and the game's own test
   menu are not mapped.
+- **The other stage records.** Only the stages played have been checked against the camera table.
+- **The game's own guard-range test.** The dummy guards on a distance to player 1's attack box: it
+  works, but the game's own test (which an attack must pass for a guard to be possible) is not found.
+- **The other moves' numbers.** The six normals are told apart by `+0x60`; the specials' codes are
+  seen (`0x2A` was one) but not named.
 
 ## Next
 
-- Find the game's ideas of guarding, being knocked down and getting up for the dummy.
-- Find what a move's number is, and the damage rule, for a proper combo readout and the advantage on a
-  guarded hit.
-- Draw the projectiles' boxes and the push box.
+- Read the damage rule through (from `0x018536`) and show what of a hit comes back.
+- Find a projectile and its records, for the boxes and the combo count.
+- Map the operator settings and the test menu.
 - Then the readable rewrites and widescreen (ROADMAP.md), which want the same memory.

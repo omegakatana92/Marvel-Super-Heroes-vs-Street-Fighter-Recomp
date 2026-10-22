@@ -24,12 +24,13 @@ From the game's own sources (`games/mshvsf/src/`, the addresses in `PROGRESS.md`
 
 - **Free play** and the **cheats**: no damage (each player), infinite time, one-hit knockouts, full
   LEVEL bars.
-- **Training**: the input display, frame data, the frame meter, the frame data log, a combo readout,
-  health refills and the hit boxes.
+- **Training**: the input display, frame data (and the advantage after a guarded hit), the frame meter,
+  the frame data log, a combo readout, health refills, the hit boxes (with the pushing box), and the
+  **dummy**: player 2 stands, crouches, jumps, records and replays, guards and answers with a recording.
 
-Still missing: the dummy (player 2 standing, crouching, jumping, guarding, recording and replaying), the
-advantage after a guarded hit, the projectiles' boxes and the operator settings. The memory that the rest
-needs is the next step (see below).
+Still missing: a projectile's boxes, the game's damage rule (so the combo readout cannot show what of a
+hit comes back), the operator settings and the game's own test menu. The memory that the rest needs is
+the next step (see below).
 
 ## What a finished port adds (this is the work)
 
@@ -68,12 +69,13 @@ How the toolkit finds these (all in `docs/FEATURES.md`):
 | Piece | What it adds | Needs | State |
 | --- | --- | --- | --- |
 | Input display | what the stick holds, and for how long | the players' facings, or their places across the stage | done (facing from `+0x4B`) |
-| Frame data | startup, active, recovery, and the advantage after a hit | the state that says a move is out, per player | done for the numbers; the advantage after a **guarded** hit waits on the game's guarding being known |
-| Combo readout | hits, damage, and what of it comes back | the damage rule (a rewrite) | a first version from the health dropping; what comes back waits on the damage rule |
-| The dummy (player 2) | stand, crouch, jump, guard, record and replay | the game's idea of a round and of guarding | **not built**: the game's guarding is not found yet |
-| Hit boxes | the players' and projectiles' boxes, drawn on the picture | the box tables and the camera's place | the players' boxes are drawn (hurt, attack, throw range, throwable); the push box and the projectiles wait |
+| Frame data | startup, active, recovery, and the advantage after a hit | the state that says a move is out, per player | done, **including a guarded hit** (the blockstun pose `+0xA0` = `0x24`) |
+| Combo readout | hits, damage, and what of it comes back | the damage rule (a rewrite) | hits and damage from the health dropping; what comes back waits on the damage rule |
+| The dummy (player 2) | stand, crouch, jump, guard, record and replay | the game's idea of a round and of guarding | **done**: stands, crouches, jumps, records and replays (three slots), guards (low crouching, jump-ins standing), presses buttons while guarding and answers with a recording. Its guard is a distance to attack boxes, not the game's own test |
+| Hit boxes | the players' and projectiles' boxes, drawn on the picture | the box tables and the camera's place | the players' boxes (hurt, attack, throw range, throwable) and the **pushing box** are drawn; a projectile's are not |
 
-The toolkit's `fight/` parts (`fight/fight.h`) give all of these once the game's own state is known.
+The tools for all of these are in the toolkit's `fight/` parts (`fight/fight.h`); the memory they read
+is in `games/mshvsf/src/mshvsf.h` and how it was found is in `PROGRESS.md`.
 
 ### 3. Alternative modes
 
@@ -100,9 +102,9 @@ mode and the widescreen possible, and it is the part most worth doing carefully.
    gauge); everything else builds on it. **Done.**
 2. **The Features page** — free play and the cheats, small and self-contained. **Done**, but for the
    operator settings and the game's own test menu.
-3. **Training mode** — the input display first, then the frame data, the combo readout, the dummy and the
-   hit boxes, on the toolkit's `fight/` parts. **In progress**: the display, the frame data, the combo
-   readout and the boxes are in; the dummy waits on the game's guarding.
+3. **Training mode** — the input display, the frame data, the combo readout, the dummy and the hit
+   boxes, on the toolkit's `fight/` parts. **Done**, but for a projectile's boxes and the damage rule;
+   the dummy guards on a distance until the game's own guard test is found.
 4. **Readable rewrites** — needed by 3 and 5, and correctness.
 5. **Widescreen.**
 6. **Alternative modes.**
